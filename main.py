@@ -1,20 +1,22 @@
 from playwright.sync_api import sync_playwright
+from app.core.config import *
+from app.services.job_service import *
+if __name__ == "__main__" :
+    run_pipeline()
 
-BRAVE_PATH = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
+"""with sync_playwright() as p:
 
-with sync_playwright() as p:
-
-    browser = p.chromium.launch(
+    context = p.chromium.launch_persistent_context(
+        user_data_dir=CONFIG["USER-DATA"],
+        executable_path=CONFIG["PATH"],
         headless=False,
-        executable_path=BRAVE_PATH
+        args=[
+            f"--profile-directory={PROFILE}"
+        ]
     )
 
-    page = browser.new_page()
+    page = context.new_page()
 
-    page.goto("https://google.com")
+    page.goto("https://linkedin.com")
 
-    print(page.title())
-
-    input("Press ENTER to close...")
-
-    browser.close()
+    input("Press ENTER to close...")"""

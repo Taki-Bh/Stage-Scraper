@@ -10,7 +10,7 @@ class LinkedInScraper(BaseScraper):
 
     BASE_URL = (
         "https://www.linkedin.com/jobs/search/"
-        "?keywords=Python%20Developer"
+        "?keywords=AI%20Engineer"
         "&location=Remote"
     )
 
@@ -37,12 +37,12 @@ class LinkedInScraper(BaseScraper):
             )
 
             html = self.get_html()
-
+            with open("dump.html","w",encoding="utf-8") as f:
+                f.write(html)
             soup = BeautifulSoup(html, "html.parser")
 
-            cards = soup.select("div.base-card")
-
-            print(f"[LINKEDIN] Found {len(cards)} job cards")
+            job_links = soup.select("div[data-job-id] a[data-control-id]")
+            print(f"[LINKEDIN] Found {len(job_links)} job cards")
 
             for card in cards:
 

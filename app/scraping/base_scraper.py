@@ -5,7 +5,7 @@ from typing import List, Dict, Any
 from playwright.sync_api import sync_playwright, Browser, Page
 import random
 import time
-
+from app.core.config import *
 
 class BaseScraper(ABC):
     """
@@ -41,25 +41,22 @@ class BaseScraper(ABC):
 
         self.playwright = sync_playwright().start()
 
-        self.browser = self.playwright.chromium.launch(
-            headless=self.headless
+        context = self.playwright.chromium.launch_persistent_context(
+        user_data_dir=CONFIG["USER-DATA"],
+        executable_path=CONFIG["PATH"],
+        headless=False,
+        args=[
+            f"--profile-directory={PROFILE}"
+        ]
         )
 
-        context = self.browser.new_context(
-            user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/136.0 Safari/537.36"
-            ),
-            viewport={
-                "width": 1440,
-                "height": 900,
-            }
-        )
-
-        self.page = context.new_page()
+        if context.pages:
+            self.page = context.pages[0]
+        else:
+            self.page = context.new_page()
 
         self.page.set_default_timeout(self.timeout)
+
 
     def close(self) -> None:
         """
@@ -115,7 +112,8 @@ class BaseScraper(ABC):
             raise RuntimeError(
                 "Page not initialized."
             )
-
+        self.page.screenshot(path="debug_view.png")
+        print("Page exists!")
         return self.page.content()
 
     def scroll_page(

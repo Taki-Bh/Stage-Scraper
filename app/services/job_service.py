@@ -1,11 +1,12 @@
 # app/services/job_service.py
 
-from app.scraping.linkedin import LinkedInScraper
-from app.extraction.parser import JobParser
+from app.scraping.linkedin_scraper import LinkedInScraper
+"""from app.extraction.parser import JobParser
 from app.extraction.normalizer import JobNormalizer
 from app.ai.relevance import RelevanceScorer
 from app.database.session import get_db_session
-from app.database.models import Job
+from app.database.models import Job"""
+
 
 
 def run_pipeline() -> None:
@@ -24,13 +25,13 @@ def run_pipeline() -> None:
 
     scraper = LinkedInScraper()
 
-    parser = JobParser()
+    #parser = JobParser()
 
-    normalizer = JobNormalizer()
+    #normalizer = JobNormalizer()
 
-    scorer = RelevanceScorer()
+    #scorer = RelevanceScorer()
 
-    session = get_db_session()
+    #session = get_db_session()
 
     # -------------------------------------------------
     # Step 1 — Scrape raw jobs
@@ -45,7 +46,8 @@ def run_pipeline() -> None:
     # -------------------------------------------------
     # Step 2 — Parse jobs
     # -------------------------------------------------
-
+    print(raw_jobs)
+    pass
     parsed_jobs = []
 
     print("[PARSING] Parsing jobs...")
