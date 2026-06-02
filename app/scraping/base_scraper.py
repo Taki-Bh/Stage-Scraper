@@ -6,7 +6,93 @@ from playwright.sync_api import sync_playwright, Browser, Page
 import random
 import time
 from app.core.config import *
+import json
+import requests
+import re
+import time
+from urllib.parse import quote
 
+
+
+def fetch_job_details(job_id, headers):
+    """
+    Step 2 (Resilient GraphQL Parser): Queries the unified GraphQL layer
+    and uses flexible regex patterns to extract content.
+    """
+    base_url = "https://www.linkedin.com/voyager/api/graphql"
+    query_id = "voyagerJobsDashJobPostingDetailSections.2bf6cded247cb2f6cc7dcda5558af592"
+    variables = f"(cardSectionTypes:List(TOP_CARD,HOW_YOU_FIT_CARD),jobPostingUrn:urn%3Ali%3Afsd_jobPosting%3A{job_id},includeSecondaryActionsV2:true,jobDetailsContext:(isJobSearch:true))"
+
+    target_url = f"{base_url}?variables={variables}&queryId={query_id}"
+
+    details_headers = headers.copy()
+    details_headers["Accept"] = "application/json"
+
+    job_data = {
+        "job_id": job_id,
+        "title": "N/A",
+        "description": "N/A"
+    }
+
+    try:
+        response = requests.get(target_url, headers=details_headers)
+
+        if response.status_code == 200:
+            response_text = response.text
+
+            # 🛠️ LOOSER TITLE REGEX: Finds "title":"..." without worrying about what key follows it
+            # We look specifically for the title field closest to the job posting metadata
+            title_matches = re.findall(r'"title":"([^"]+)"', response_text)
+            if title_matches:
+                # The first few titles in this specific GraphQL endpoint are almost always the job title
+                # and company name. We grab index 0.
+                job_data["title"] = title_matches[0]
+
+            # 🛠️ LOOSER DESCRIPTION REGEX: In GraphQL, text segments are often labeled as "text"
+            # inside text objects or paragraphs. We look for the longest text block.
+            all_text_blocks = re.findall(r'"text":"([^"]+)"', response_text)
+            if all_text_blocks:
+                # The job description is by far the largest text block in the payload.
+                # We sort by character length and pick the biggest one.
+                longest_block = max(all_text_blocks, key=len)
+
+                # Clean up typical JSON escape artifacts
+                clean_desc = longest_block.replace("\\n", "\n").replace('\\"', '"')
+                job_data["description"] = clean_desc
+
+            # Diagnostic Fallback: If it STILL says N/A, let's peek at the structure
+            if job_data["title"] == "N/A":
+                print(f"    [!] Debug: Sample response text slice: {response_text[:400]}")
+
+        else:
+            print(f"    [!] Couldn't parse ID {job_id}. Status Code: {response.status_code}")
+
+    except Exception as e:
+        print(f"    [!] Error connection execution on ID {job_id}: {e}")
+
+    return job_data
+if __name__ == "__main__":
+    search_term = "machine learning intern"
+    print(f"[*] Initializing Step 1: Querying index list for '{search_term}'...")
+
+    target_ids, active_headers = fetch_linkedin_job_ids(keyword=search_term, total_jobs_to_fetch=25)
+    total_found = len(target_ids)
+    print(f"[+] Successfully indexed {total_found} Job IDs. Starting Step 2 detail extraction loop...\n")
+
+    scraped_dataset = []
+
+    # Process the first 3 jobs as a quick sanity check before processing all 25
+    for index, j_id in enumerate(target_ids[:3], start=1):
+        print(f"[*] [{index}/3] Processing Job ID: {j_id}...")
+        single_job_parsed = fetch_job_details(j_id, active_headers)
+
+        print(f"    [✔] Title Extracted: {single_job_parsed['title']}")
+        scraped_dataset.append(single_job_parsed)
+        time.sleep(2.5)
+
+    print("\n" + "="*60)
+    print(f"[FINISHED] Diagnostic run complete. Extracted data for {len(scraped_dataset)} jobs.")
+    print("="*60)
 class BaseScraper(ABC):
     """
     Abstract Playwright-based scraper.
@@ -24,7 +110,7 @@ class BaseScraper(ABC):
         self.headless = headless
         self.timeout = timeout
         self.delay_range = delay_range
-
+        self.jobs = []
         # Playwright objects
         self.playwright = None
         self.browser: Browser | None = None
@@ -112,9 +198,52 @@ class BaseScraper(ABC):
             raise RuntimeError(
                 "Page not initialized."
             )
-        self.page.screenshot(path="debug_view.png")
-        print("Page exists!")
+        try:
+            self.page.screenshot(
+                path="debug_view.png",
+                timeout=3000,
+                animations="disabled",
+                wait_until="domcontentloaded"
+            )
+        except Exception as e:
+            print("Screenshot skipped:", e)
+            print("Page exists!")
         return self.page.content()
+
+
+    def handle_response(self, response):
+        try:
+            url = response.url
+
+            if "voyagerJobsDashJobCards" not in url:
+                return
+
+            data = response.json()
+            
+            with open("output.json", "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            print("RAW KEYS:", data.keys())
+            print("RAW SAMPLE:", data)
+
+            elements = (
+                data.get("data", {})
+                    .get("jobSearch", {})
+                    .get("elements", [])
+            )
+
+            if not hasattr(self, "jobs"):
+                self.jobs = []
+
+            self.jobs.extend(elements)
+
+            print(f"Captured {len(elements)} jobs | Total: {len(self.jobs)}")
+
+        except Exception as e:
+            print("Error:", e)
+
+
+
+
 
     def scroll_page(
         self,
@@ -124,18 +253,32 @@ class BaseScraper(ABC):
         """
         Simulate human-like scrolling.
         """
-
         if not self.page:
             raise RuntimeError(
                 "Page not initialized."
             )
+        scrollable = self.page.locator(".scaffold-layout__list > div").first
+        print(scrollable.evaluate("""
+        el => ({
+            overflow: getComputedStyle(el).overflowY,
+            scrollHeight: el.scrollHeight,
+            clientHeight: el.clientHeight
+        })
+        """))
 
-        for _ in range(scroll_count):
 
-            self.page.mouse.wheel(0, 3000)
+        self.page.on("response", self.handle_response)
+        for _ in range(10):
+            scrollable.evaluate("""
+            el => el.scrollBy(0, 500)
+            """)
+            self.page.wait_for_timeout(100)
 
-            time.sleep(scroll_pause)
 
+
+    
+
+        
     def _random_delay(self) -> None:
         """
         Random human-like delay.

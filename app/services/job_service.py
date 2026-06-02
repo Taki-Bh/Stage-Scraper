@@ -16,9 +16,7 @@ def run_pipeline() -> None:
     Flow:
         Scrape -> Parse -> Normalize -> Score -> Store
     """
-
-    print("[PIPELINE] Starting pipeline...")
-
+       
     # -------------------------------------------------
     # Initialize components
     # -------------------------------------------------
