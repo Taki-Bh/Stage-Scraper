@@ -71,28 +71,6 @@ def fetch_job_details(job_id, headers):
         print(f"    [!] Error connection execution on ID {job_id}: {e}")
 
     return job_data
-if __name__ == "__main__":
-    search_term = "machine learning intern"
-    print(f"[*] Initializing Step 1: Querying index list for '{search_term}'...")
-
-    target_ids, active_headers = fetch_linkedin_job_ids(keyword=search_term, total_jobs_to_fetch=25)
-    total_found = len(target_ids)
-    print(f"[+] Successfully indexed {total_found} Job IDs. Starting Step 2 detail extraction loop...\n")
-
-    scraped_dataset = []
-
-    # Process the first 3 jobs as a quick sanity check before processing all 25
-    for index, j_id in enumerate(target_ids[:3], start=1):
-        print(f"[*] [{index}/3] Processing Job ID: {j_id}...")
-        single_job_parsed = fetch_job_details(j_id, active_headers)
-
-        print(f"    [✔] Title Extracted: {single_job_parsed['title']}")
-        scraped_dataset.append(single_job_parsed)
-        time.sleep(2.5)
-
-    print("\n" + "="*60)
-    print(f"[FINISHED] Diagnostic run complete. Extracted data for {len(scraped_dataset)} jobs.")
-    print("="*60)
 class BaseScraper(ABC):
     """
     Abstract Playwright-based scraper.

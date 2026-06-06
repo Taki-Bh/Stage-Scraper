@@ -1,0 +1,8 @@
+2026/06/04-14:15:55.109 60f8 Reusing MANIFEST D:\Data Science\Scraping\linkedin_scraper\linkedin_scraper\core\linkedin_session\Default\Local Storage\leveldb/MANIFEST-000001
+2026/06/04-14:15:55.116 60f8 Recovering log #7
+2026/06/04-14:15:55.117 60f8 Level-0 table #10: started
+2026/06/04-14:15:55.145 60f8 Level-0 table #10: 58185 bytes OK
+2026/06/04-14:15:55.146 60f8 Recovering log #10
+2026/06/04-14:15:55.148 60f8 Reusing old log D:\Data Science\Scraping\linkedin_scraper\linkedin_scraper\core\linkedin_session\Default\Local Storage\leveldb/000010.log 
+2026/06/04-14:15:55.181 60f8 Delete type=0 #7
+2026/06/04-14:15:55.181 60f8 Delete type=2 #11
