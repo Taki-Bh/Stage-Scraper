@@ -19,15 +19,14 @@ async def login(page,email="",password=""):
     if await auth.is_logged(page):
         return
     try:
-    if email=="" or password=="":
-
-        await auth.login_with_credentials(page)
+        if email=="" or password=="":
+            await auth.login_with_credentials(page)
 
     except AuthenticationError as e:
         
         if "You may need to verify your identity manually" in str(e):
             logger.warning("🚨 LinkedIn identity check caught in exception!")
-        
+            await auth.wait_for_manual_login(page)
             # Pause the pipeline so you can handle it
             input("Please resolve the verification in the browser window, then press Enter here...")
         else:

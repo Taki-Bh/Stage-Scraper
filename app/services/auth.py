@@ -203,7 +203,7 @@ async def login_with_credentials(
         start_time = time.time()
         logged_in = False
         while (time.time() - start_time) * 1000 < 5000:
-            if await is_logged_in(page):
+            if await is_logged_in2(page):
                 logger.info("✓ Successfully logged in to LinkedIn")
                 logged_in = True
                 break
@@ -296,7 +296,7 @@ async def is_logged_in(page: Page) -> bool:
         print(current_url)
         if current_url=="https://www.linkedin.com/feed/":
             print("Logged in")
-            return true
+            return True
         # Step 1: Fail-fast on auth blockers
         """ auth_blockers = ['/login', '/authwall', '/checkpoint', '/challenge', '/uas/login', '/uas/consumer-email-challenge']
         if any(pattern in current_url for pattern in auth_blockers):
@@ -335,7 +335,14 @@ async def is_logged(page):
         print("Not logged in")
         return False
 
-
+async def is_logged_in2(page,timeout: int = 300000):
+    try:
+        await page.wait_for_url("**/feed/**", timeout=timeout)
+    except:
+        logger.warning("Login detection failed via feed URL!")
+        return False
+    logger.info("🎉 Login detected via feed URL!")
+    return True
 async def wait_for_manual_login(page: Page, timeout: int = 300000) -> None:
     """
     Wait for user to manually complete login (useful for 2FA, CAPTCHA, etc.).
@@ -355,20 +362,22 @@ async def wait_for_manual_login(page: Page, timeout: int = 300000) -> None:
     start_time = asyncio.get_event_loop().time()
 
     while True:
+
         # Check if logged in
-        if await is_logged_in(page):
+        if await is_logged_in2(page,2000):
             logger.info("✓ Manual login completed successfully")
             return
 
-        # Check timeout
+            # Check timeout
         elapsed = (asyncio.get_event_loop().time() - start_time) * 1000
         if elapsed > timeout:
             raise AuthenticationError(
-                "Manual login timeout. Please try again and complete login faster."
+                    "Manual login timeout. Please try again and complete login faster."
             )
 
-        # Wait a bit before checking again
+            # Wait a bit before checking again
         await asyncio.sleep(1)
+    
 async def main():
      async with async_playwright() as p:
         context = await p.chromium.launch_persistent_context(
