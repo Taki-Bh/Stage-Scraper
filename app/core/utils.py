@@ -6,7 +6,7 @@ import logging
 from typing import Any, Callable, Optional, TypeVar, cast
 from playwright.async_api import Page, TimeoutError as PlaywrightTimeoutError
 
-from exceptions import RateLimitError, ElementNotFoundError, NetworkError
+from .exceptions import RateLimitError, ElementNotFoundError, NetworkError
 
 logger = logging.getLogger(__name__)
 
@@ -286,3 +286,11 @@ async def is_page_loaded(page: Page) -> bool:
         return state == 'complete'
     except:
         return False
+async def show_matching_selectors(page,s):
+    inputs = await page.query_selector_all(s)
+    for inp in inputs:
+        type_attr = await inp.get_attribute('type')
+        id_attr = await inp.get_attribute('id')
+        name_attr = await inp.get_attribute('name')
+        visible = await inp.is_visible()
+        print(f"type={repr(type_attr)} | id={repr(id_attr)} | name={repr(name_attr)} | visible={visible}")

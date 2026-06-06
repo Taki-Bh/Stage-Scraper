@@ -8,8 +8,8 @@ from typing import Optional, Tuple
 from playwright.async_api import Page, TimeoutError as PlaywrightTimeoutError,async_playwright
 from playwright.sync_api import sync_playwright
 from dotenv import load_dotenv
-from exceptions import AuthenticationError
-from utils import detect_rate_limit
+from app.core.exceptions import AuthenticationError
+from app.core.utils import detect_rate_limit
 
 logger = logging.getLogger(__name__)
 
@@ -76,14 +76,7 @@ async def set_cookies(page):
         "domain": ".linkedin.com",
         "path": "/"
     }])
-async def show_matching_selectors(page,s):
-    inputs = await page.query_selector_all(s)
-    for inp in inputs:
-        type_attr = await inp.get_attribute('type')
-        id_attr = await inp.get_attribute('id')
-        name_attr = await inp.get_attribute('name')
-        visible = await inp.is_visible()
-        print(f"type={repr(type_attr)} | id={repr(id_attr)} | name={repr(name_attr)} | visible={visible}")
+
 async def login_with_credentials(
     page: Page,
     email: Optional[str] = None,
@@ -327,6 +320,20 @@ async def is_logged_in(page: Page) -> bool:
     except Exception:
         return False
 
+def is_logged(page):
+     page.goto(
+            "https://www.linkedin.com/feed/",
+            wait_until="domcontentloaded", #always use cuzz networkidle will never fire
+            timeout=60000
+
+     )
+
+     if "/feed/" in page.url:
+        print("Logged in")
+        return True
+     else:
+        print("Not logged in")
+        return False
 
 
 async def wait_for_manual_login(page: Page, timeout: int = 300000) -> None:
