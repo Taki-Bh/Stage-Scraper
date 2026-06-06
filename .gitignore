@@ -6,3 +6,4 @@ playwright-data/
 linkedin-profile/
 brave-playwright-profile/
 linkedin_session/
+.env
