@@ -294,3 +294,43 @@ async def show_matching_selectors(page,s):
         name_attr = await inp.get_attribute('name')
         visible = await inp.is_visible()
         print(f"type={repr(type_attr)} | id={repr(id_attr)} | name={repr(name_attr)} | visible={visible}")
+
+
+
+import json
+import os
+from typing import Union, Dict, Optional
+
+def extract_linkedin_tokens(storage_state: Union[str, dict]) -> Dict[str, Optional[str]]:
+    """
+    Extracts JSESSIONID and li_at from a Playwright storage state.
+    
+    Args:
+        storage_state: A file path (e.g., 'state.json'), a raw JSON string, 
+                       or a pre-parsed dictionary.
+                       
+    Returns:
+        A dictionary containing {'JSESSIONID': value, 'li_at': value}
+    """
+    # 1. Load the data regardless of the input type
+    if isinstance(storage_state, str):
+        if os.path.exists(storage_state):
+            # It's a file path
+            with open(storage_state, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        else:
+            # It's a raw JSON string
+            data = json.loads(storage_state)
+    else:
+        data = storage_state
+
+    # 2. Extract target cookies efficiently
+    tokens = {"JSESSIONID": None, "li_at": None}
+    cookies = data.get("cookies", [])
+    
+    for cookie in cookies:
+        name = cookie.get("name")
+        if name in tokens:
+            tokens[name] = cookie.get("value")
+            
+    return tokens
