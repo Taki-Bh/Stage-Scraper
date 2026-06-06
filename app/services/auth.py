@@ -320,8 +320,8 @@ async def is_logged_in(page: Page) -> bool:
     except Exception:
         return False
 
-def is_logged(page):
-     page.goto(
+async def is_logged(page):
+     await page.goto(
             "https://www.linkedin.com/feed/",
             wait_until="domcontentloaded", #always use cuzz networkidle will never fire
             timeout=60000
