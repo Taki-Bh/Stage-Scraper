@@ -4,6 +4,7 @@ import app.services.auth  as auth
 import asyncio
 import os
 from app.core.utils import retry_async
+from app.core.utils import get_auth_cookies
 from playwright.async_api import async_playwright
 from app.core.exceptions import AuthenticationError
 
@@ -20,7 +21,7 @@ async def login(page,email="",password=""):
         return
     try:
         if email=="" or password=="":
-            await auth.login_with_credentials(page)
+            await auth.login_with_credentials(page=page,email=password,password=password)
 
     except AuthenticationError as e:
         
@@ -103,10 +104,11 @@ class PipelineOrchestrator:
             context,page= await get_authenticated_context(browser)
                 
             logger.info("Saving acquired cookies for loggin...")
-            await login(page)
-            input()
+            await login(page,"a","a")
+            
             await context.storage_state(path="state.json")
             await browser.close()
+            input()
 
 
 
@@ -115,7 +117,9 @@ class PipelineOrchestrator:
         # -------------------------------------------------
         # Step 1 — Scrape raw jobs
         # -------------------------------------------------
-
+        cookies=get_auth_cookies()
+        scraper.set_scraping_cookies(cookies)
+        print("[SCRAPING] Scraping cookies were set!")
         print("[SCRAPING] Fetching jobs...")
 
         raw_jobs = scraper.scrape()

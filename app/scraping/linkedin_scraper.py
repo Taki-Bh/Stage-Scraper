@@ -19,7 +19,7 @@ OUTPUT_CSV  = f"internships_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
 
 class LinkedInScraper(BaseScraper):
     
-    def __init__(self):
+    def __init__(self,cookies=None):
         super().__init__()
         
         # Centralized active session state tokens
@@ -51,7 +51,21 @@ class LinkedInScraper(BaseScraper):
                 '__cf_bm=mmh4Af9A6RCbsne3rwaRAbxfuSSPQ41tujF1oQChg_4-1780389438.2393534-1.0.1.1-pe5G3GtA2h2ptcXPFFdm7.HzUIRt849mmUpsezZxjFAFOE.T2CMvXCLBt7mb.Pw8YvY7r32mN_osA4RHMu0blLCx7UMX_CwhTb.ajoSrwOdbgDcXpjI_1ZV04V8Ror1_'
             )
         }
-
+    def set_scraping_cookies(self, cookies: dict):
+        """
+        Takes a dictionary of cookies and formats them into a single 
+        HTTP 'Cookie' header string assigned to self.header.
+        """
+        # 1. Join all key=value pairs with a semicolon and a space
+        cookie_string = "; ".join(f"{key}={value}" for key, value in cookies.items())
+        
+        # 2. Append a trailing semicolon and space to perfectly match your original layout
+        if cookie_string:
+            cookie_string += "; "
+            
+        # 3. Assign it to your request headers dictionary
+        self.headers["Cookie"] = cookie_string
+        self.headers["csrf-token"]=cookies["JSESSIONID"]
     def fetch_linkedin_job_ids(self, keyword: str, location_name: str, total_jobs_to_fetch: int) -> list:
         """Step 1: Scrape the list of unique job IDs from search cards using dynamic geoId mapping."""
         base_url = "https://www.linkedin.com/voyager/api/voyagerJobsDashJobCards"

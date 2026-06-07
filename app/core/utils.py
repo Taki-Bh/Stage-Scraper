@@ -334,3 +334,37 @@ def extract_linkedin_tokens(storage_state: Union[str, dict]) -> Dict[str, Option
             tokens[name] = cookie.get("value")
             
     return tokens
+target_cookies = (
+    'bcookie',
+    'bscookie',
+    'g_state',
+    'li_theme',
+    'li_theme_set',
+    'li_sugr',
+    'li_rm',
+    'visit',
+    'timezone',
+    'aam_uuid',
+    '_gcl_au',
+    '_pxvid',
+    'dfpfpt',
+    'AMCVS_14215E3D5995C57C0A495C55%40AdobeOrg',
+    'lang',
+    'liap',
+    'li_at',
+    'JSESSIONID',
+    'sdui_ver',
+    'AnalyticsSyncHistory',
+    'lms_ads',
+    'lms_analytics',
+    '_guid',
+    'lidc',
+    '__cf_bm',
+)
+
+def get_auth_cookies():
+    with open("state.json", "r", encoding="utf-8") as f:
+    
+        data=json.load(f)
+        authdata = {c["name"]: c["value"] for c in data["cookies"] if c["name"] in target_cookies}
+        return authdata
