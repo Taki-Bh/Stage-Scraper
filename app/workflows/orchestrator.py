@@ -1,45 +1,18 @@
 from app.scraping.linkedin_scraper import LinkedInScraper
 import logging
-import app.services.auth  as auth
+import app.services.auth as auth
 import asyncio
 import os
 from app.core.utils import retry_async
 from app.core.utils import get_auth_cookies
 from playwright.async_api import async_playwright
 from app.core.exceptions import AuthenticationError
-
+from app.core.config import *
 logger = logging.getLogger("Pipeline")
 
-STATE_FILE="state.json"
-USER_AGENT="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-LOCALE="en-US"
 
 
 
-async def login(page,email="",password=""):
-    if await auth.is_logged(page):
-        return
-    try:
-        if email=="" or password=="":
-            await auth.login_with_credentials(page=page,email=password,password=password)
-
-    except AuthenticationError as e:
-        
-        if "You may need to verify your identity manually" in str(e):
-            logger.warning("🚨 LinkedIn identity check caught in exception!")
-            await auth.wait_for_manual_login(page)
-            # Pause the pipeline so you can handle it
-            input("Please resolve the verification in the browser window, then press Enter here...")
-        else:
-            # It's a completely different error, handle it normally
-            logger.error(f"Pipeline failed due to a different error: {e}")
-
-async def login_and_save(context, page):
-    """Helper function to handle manual login and save state."""
-    await page.goto("https://www.linkedin.com/login")
-    input("Log in manually in the browser window, then press Enter here to save session...")
-    await context.storage_state(path=STATE_FILE)
-    print(f"✅ Saved new session to {STATE_FILE}")
 
 async def get_authenticated_context(browser):
     """Dynamically creates a context based on whether the state file exists."""
@@ -59,8 +32,6 @@ async def get_authenticated_context(browser):
         # Run the login flow to generate the missing file
         
     return context, page
-
-
 
 class PipelineOrchestrator:
     def run_pipeline(self,keywords) -> None:
@@ -104,11 +75,11 @@ class PipelineOrchestrator:
             context,page= await get_authenticated_context(browser)
                 
             logger.info("Saving acquired cookies for loggin...")
-            await login(page,"a","a")
+            await auth.login(page,"a","a")
             
             await context.storage_state(path="state.json")
             await browser.close()
-            input()
+            
 
 
 

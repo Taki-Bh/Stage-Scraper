@@ -10,7 +10,7 @@ from playwright.sync_api import sync_playwright
 from dotenv import load_dotenv
 from app.core.exceptions import AuthenticationError
 from app.core.utils import detect_rate_limit
-
+from app.core.config import *
 logger = logging.getLogger(__name__)
 
 
@@ -378,6 +378,35 @@ async def wait_for_manual_login(page: Page, timeout: int = 300000) -> None:
             # Wait a bit before checking again
         await asyncio.sleep(1)
     
+
+async def login(page,email="",password=""):
+    if await is_logged(page):
+        return
+    try:
+        if email=="" or password=="":
+            await login_with_credentials(page=page,email=password,password=password)
+
+    except AuthenticationError as e:
+        
+        if "You may need to verify your identity manually" in str(e):
+            logger.warning("🚨 LinkedIn identity check caught in exception!")
+            await wait_for_manual_login(page)
+            # Pause the pipeline so you can handle it
+            input("Please resolve the verification in the browser window, then press Enter here...")
+        else:
+            # It's a completely different error, handle it normally
+            logger.error(f"Pipeline failed due to a different error: {e}")
+
+async def login_and_save(context, page):
+    """Helper function to handle manual login and save state."""
+    await page.goto("https://www.linkedin.com/login")
+    input("Log in manually in the browser window, then press Enter here to save session...")
+    await context.storage_state(path=STATE_FILE)
+    print(f"✅ Saved new session to {STATE_FILE}")
+
+
+
+
 async def main():
      async with async_playwright() as p:
         context = await p.chromium.launch_persistent_context(
