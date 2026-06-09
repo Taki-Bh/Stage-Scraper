@@ -8,3 +8,4 @@ brave-playwright-profile/
 linkedin_session/
 .env
 state.json
+dumps/
