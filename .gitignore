@@ -9,3 +9,4 @@ linkedin_session/
 .env
 state.json
 dumps/
+state.json
